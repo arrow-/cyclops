@@ -121,9 +121,10 @@
 
 #define RPC_HEADER_SZ   1
 #define RPC_MAX_ARGS    4
+#define RPC_IDENTITY_SZ 65;
 
 // Single Byte Definitions
-#define SB_NUM_CMD       5
+#define SB_NUM_CMD       7
 #define SB_CHANNEL_MASK  0x78 // channel[6:3]
 #define SB_CMD_MASK      0x07 // command[2:0]
 #define SB_CHANNEL_SHIFT 0x3

@@ -1,7 +1,7 @@
 #ifndef CL_MY_SOURCES_H
 #define CL_MY_SOURCES_H
 //
-// This file contains the globals definitions of the Source objects Just include
+// This file contains the global definitions of the Source objects. Just include
 // this file into your main `.ino` script, and you'll get access to the objects
 // here.
 //

@@ -107,6 +107,10 @@ class Task{
     /**
      * @brief      Executes the Task, only if it can be performed when
      *             aquisition _IS NOT_ active.
+     *           
+     * @todo       This function fails the strict-aliasing rules of C/C++ which means
+     *             this code cannot be optimised! The fix is to use ``memcpy``, see
+     *             [this](http://dbp-consulting.com/tutorials/StrictAliasing.html).
      *
      * @return     ``0`` is successful, else ``1``.
      */

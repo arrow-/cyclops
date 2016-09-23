@@ -18,11 +18,11 @@ You should have received a copy of the GNU General Public License
 along with CL.  If not, see <http://www.gnu.org/licenses/>.
 
 * June 2016 Modified by Ananya Bahadur (ananya95@gmail.com)
-  Ported CL::Cyclops.h to the Teenst 3.X device
+  Ported CL::Cyclops.h to the Teensy 3.X device
 */
 
-#ifndef CL_CYCLOPS_H
-#define CL_CYCLOPS_H
+#ifndef CL_BOARD_H
+#define CL_BOARD_H
 
 #if ARDUINO >= 100
  #include <Arduino.h>

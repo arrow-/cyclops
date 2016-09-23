@@ -72,10 +72,10 @@ uint8_t Task::compute(){
         Serial.write(0xf1); // ERROR::task::aquisition_inactive
         break;
       case 7:
-        Serial.print(F("Teensy 3.2 running CLv1 on Cyclops rev3.6\n"));
-        Serial.print(F("# Waveforms: "));
+        Serial.println(F("CLvx.x.x Teensy 3.2 on Cyclops rev3.6.x"));
+        Serial.print(F("#W "));
         Serial.println(Waveform::size);
-        Serial.println(F("Channel State:"));
+        Serial.println(F("BS "));
         for (uint8_t chID=0; chID < 4; chID++){
           Serial.println( (Board::isConnectedAtChannel(chID))? "1" : "0" );
         }
@@ -104,39 +104,39 @@ uint8_t Task::compute(){
     case  3:
       // change_time_period
       if (target_waveform->source_ptr->name == GENERATED)
-        ((generatedSource*)(target_waveform->source_ptr))->setTimePeriod(*(uint32_t*)args);
+        ((generatedSource*)(target_waveform->source_ptr))->setTimePeriod(*(reinterpret_cast<uint32_t*>(args)));
       break;
     case  4:
       // time_factor
-      target_waveform->source_ptr->setTScale(*(float*)args);
+      target_waveform->source_ptr->setTScale(*(reinterpret_cast<float*>(args)));
       break;
     case  5:
       // voltage_factor
-      target_waveform->source_ptr->setVScale(*(float*)args);
+      target_waveform->source_ptr->setVScale(*(reinterpret_cast<float*>(args)));
       break;
     case  6:
       // voltage_offset
-      target_waveform->source_ptr->setOffset(*(int16_t*)args);
+      target_waveform->source_ptr->setOffset(*(reinterpret_cast<int16_t*>(args)));
       break;
     case  7:
       // square_on_time
       if (target_waveform->source_ptr->name == SQUARE)
-        ((squareSource*)(target_waveform->source_ptr))->level_time[1] = *(uint32_t*)args;
+        ((squareSource*)(target_waveform->source_ptr))->level_time[1] = *(reinterpret_cast<uint32_t*>(args));
       break;
     case  8:
       // square_off_time
       if (target_waveform->source_ptr->name == SQUARE)
-        ((squareSource*)(target_waveform->source_ptr))->level_time[0] = *(uint32_t*)args;
+        ((squareSource*)(target_waveform->source_ptr))->level_time[0] = *(reinterpret_cast<uint32_t*>(args));
       break;
     case  9:
       // square_on_level
       if (target_waveform->source_ptr->name == SQUARE)
-        ((squareSource*)(target_waveform->source_ptr))->voltage_level[1] = *(uint16_t*)args;
+        ((squareSource*)(target_waveform->source_ptr))->voltage_level[1] = *(reinterpret_cast<uint16_t*>(args));
       break;
     case 10:
       // square_off_level
       if (target_waveform->source_ptr->name == SQUARE)
-        ((squareSource*)(target_waveform->source_ptr))->voltage_level[0] = *(uint16_t*)args;
+        ((squareSource*)(target_waveform->source_ptr))->voltage_level[0] = *(reinterpret_cast<uint16_t*>(args));
       break;
     }
     //Serial.write('@');
