@@ -16,20 +16,53 @@ void Task::setArgs(uint8_t arg_len){
   Serial.readBytes(args, arg_len);
 }
 
-uint8_t Task::compute(){
-  // Single Byte
-  if (argsLength == 0){
-    uint8_t chs = channelID;
-    if (commandID == 3){
-      //swap
-      uint8_t ch_a, ch_b;
-      for (ch_a=0   ; ((chs & 1) == 0); ch_a++);
-      for (ch_b=ch_a; ((chs & 1) == 0); ch_b++);
-      Waveform::swapChannels(Waveform::_list[ch_a], Waveform::_list[ch_b]);
-      //Serial.write(0xf0);
-      return 0;
+void Task::dumpIdentity(){
+  // RPC_IDENTITY_SZ 26
+  Serial.println(F("T32   @CL36")); // 13
+  Serial.print(F("W ")); // 2
+  Serial.println(Waveform::size); // 3
+  Serial.print(F("B ")); // 2
+  for (uint8_t chID=0; chID < 4; chID++){ // 4
+    Serial.print( (Board::isConnectedAtChannel(chID))? "1" : "0" );
+  }
+  Serial.println(""); // 2
+}
+
+// private
+uint8_t Task::computeSingleByte(){
+  uint8_t chs = channelID;
+  if (AquisitionStatus == false){
+    switch (commandID){
+      case 4:
+        // LAUNCH (All sources are reset already).
+        // The system is ready, just get into the loop.
+        AquisitionStatus = true;
+        Serial.write(RPC_SUCCESS_LAUNCH);
+        return 0;
+      case 6:
+        // TEST signal
+        uint8_t ch_a;
+        for (ch_a=0   ; (((chs & 1) == 0) && (ch_a < 4)); ch_a++, chs >>= 1);
+        if (ch_a == 4){
+          Serial.write(RPC_FAILURE_notEA);
+          return 1;
+        }
+        else{
+          // TEST ch_a
+          Serial.write(RPC_SUCCESS_TEST);
+          return 0;
+        }
+      case 7:
+        dumpIdentity();
+        Serial.write(RPC_SUCCESS_IDENTITY);
+        return 0;
     }
-    else if (commandID < 3){
+    Serial.write(RPC_FAILURE_notEA);
+    return 1;
+  }
+  else{
+  // AquisitionStatus == true
+    if (commandID < 3){
       for (uint8_t i=0; i<Waveform::size; i++){
         if ((chs & 1) == 0) continue;
         switch (commandID){
@@ -50,42 +83,55 @@ uint8_t Task::compute(){
       }
       //Serial.write(Waveform::_list[0]->source_ptr->opMode);
       //Serial.write('\n');
-      Serial.write(0x10); // SUCCESS::task::single_byte
+      Serial.write(RPC_SUCCESS_SB_DONE);
       return 0;
     }
-    // commandID == 7 (identity)
     else{
       switch (commandID){
-      case 4:
-        // LAUNCH All sources are reset already.
-        // The system is ready, just get into the loop.
-        AquisitionStatus = true;
-        Serial.write(0x00); // SUCCESS::task::single_byte::launch
-        break;
-      case 5:
-        // LAND (land the rocket after a launch, no?)
-        AquisitionStatus = false;
-        Serial.write(0x01); // SUCCESS::task::single_byte::stop
-        break;
-      case 6:
-        // NOT_USED_RIGHT_NOW
-        Serial.write(0xf1); // ERROR::task::aquisition_inactive
-        break;
-      case 7:
-        Serial.println(F("CLvx.x.x Teensy 3.2 on Cyclops rev3.6.x"));
-        Serial.print(F("#W "));
-        Serial.println(Waveform::size);
-        Serial.println(F("BS "));
-        for (uint8_t chID=0; chID < 4; chID++){
-          Serial.println( (Board::isConnectedAtChannel(chID))? "1" : "0" );
+      case 3:
+        uint8_t ch_a, ch_b;
+        for (ch_a=0   ; (((chs & 1) == 0) && (ch_a < 4)); ch_a++, chs >>= 1);
+        Serial.write(ch_a);
+        if (ch_a < 3){
+          chs >>= 1;
+          for (ch_b=ch_a+1; (((chs & 1) == 0) && (ch_b < 4)); ch_b++, chs >>= 1);
+          Serial.write(ch_b);
+          if (ch_b < 4){
+            Waveform::swapChannels(Waveform::_list[ch_a], Waveform::_list[ch_b]);
+            Serial.write(RPC_SUCCESS_SB_DONE);
+            return 0;
+          }
+          else{
+            Serial.write(RPC_FAILURE_EA);
+            return 1;
+          }
         }
-        Serial.write(0x11); // SUCCESS::task::identity
-        break;
+        else{
+          Serial.write(RPC_FAILURE_EA);
+          return 1;
+        }
+      case 5:
+        // LAND (land the rocket after a launch, no? ;) )
+        AquisitionStatus = false;
+        Serial.write(RPC_SUCCESS_END);
+        return 0;
+      case 7:
+        dumpIdentity();
+        Serial.write(RPC_SUCCESS_IDENTITY);
+        return 0;
       }
-      return 0;
     }
+    Serial.write(RPC_FAILURE_EA);
+    return 1;
   }
-  // Multi Byte Command
+}
+
+// private
+uint8_t Task::computeMultiByte(){
+  if (AquisitionStatus == false){
+    Serial.write(RPC_FAILURE_notEA);
+    return 1;
+  }
   else{
     Waveform *target_waveform = Waveform::_list[channelID];
     switch (commandID){
@@ -139,23 +185,18 @@ uint8_t Task::compute(){
         ((squareSource*)(target_waveform->source_ptr))->voltage_level[0] = *(reinterpret_cast<uint16_t*>(args));
       break;
     }
-    //Serial.write('@');
-    //Serial.write('\n');
-    Serial.write(0x20); // SUCCESS::task::multi_byte
+    Serial.write(RPC_SUCCESS_MB_DONE);
     return 0;
   }
-  Serial.write(0xf0); // ERROR::task::aquisition_active
-  return 1;
 }
 
-uint8_t Task::checkAndCompute(){
+uint8_t Task::compute(){
   if (argsLength == 0){
-    if (commandID == 4 || commandID == 7)
-      // 4:LAUNCH, 7:IDENTITY
-      return compute();
+    return computeSingleByte();
   }
-  Serial.write(0xf1); // ERROR::task::aquisition_inactive
-  return 1;
+  else{
+    return computeMultiByte();
+  }
 }
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+

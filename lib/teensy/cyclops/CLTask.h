@@ -99,22 +99,14 @@ class Task{
     /**
      * @brief      Executes the Task, only if it can be performed when
      *             aquisition _IS_ Active.
-     *
+     * @todo       This function fails the strict-aliasing rules of C/C++ which means
+     *             this code cannot be optimised! The fix is to use ``memcpy``, see
+     *             [this](http://dbp-consulting.com/tutorials/StrictAliasing.html).
      * @return     ``0`` if successful, else ``1``.
      */
     uint8_t compute();
 
-    /**
-     * @brief      Executes the Task, only if it can be performed when
-     *             aquisition _IS NOT_ active.
-     *           
-     * @todo       This function fails the strict-aliasing rules of C/C++ which means
-     *             this code cannot be optimised! The fix is to use ``memcpy``, see
-     *             [this](http://dbp-consulting.com/tutorials/StrictAliasing.html).
-     *
-     * @return     ``0`` is successful, else ``1``.
-     */
-    uint8_t checkAndCompute();
+    void dumpIdentity();
 
  private:
     uint8_t _priority;         /**< Not needed now */
@@ -127,6 +119,9 @@ class Task{
      * @brief      determines priority of this task using information in RPC_defs.h?
      */
     void computePriority();
+
+    uint8_t computeSingleByte();
+    uint8_t computeMultiByte();
 };
 
 /**

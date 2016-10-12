@@ -50,7 +50,7 @@ void loop()
     cyclops::readSerialAndPush(&processQueue);
     if (processQueue.size > 0){
       cyclops::Task* t = processQueue.peek();
-      t->checkAndCompute();
+      t->compute();
       processQueue.pop();
     }
   }

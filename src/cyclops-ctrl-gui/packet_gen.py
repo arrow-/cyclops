@@ -3,8 +3,10 @@ import serial, time, struct
 
 def make_sb(channel_list, command):
   channel_bits = 0
+  assert(len(channel_list) > 0)
   for i in channel_list:
-    channel_bits |= (1 << i)
+    if (i < 4):
+      channel_bits |= (1 << i)
   channel_bits <<= 3
   res = channel_bits | command | 128
   return res.to_bytes(1, byteorder="little") # byteorder not really required because it' just gonna be 1 byte
@@ -54,6 +56,9 @@ start    | s, , 0
 stop     | s, , 1
 reset    | s, , 2
 swap     | s, , 3
+launch   | s,x, 4
+end      | s,x, 5
+test     | s, , 6
 identity | s, , 7
 
 change_source_l    | m, , 0, 

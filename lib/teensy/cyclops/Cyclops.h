@@ -7,7 +7,7 @@
  #include <WProgram.h>
 #endif
 #include "RPC_defs.h"
-#include "SPI_fifo.h"
+#include "Board.h"
 #include "Waveform.h"
 
 /**
